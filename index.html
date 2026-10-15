@@ -1,13 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>아기자기 감성 지도 - 내 주변 탐방</title>
   
-  <!-- CSS 스타일링 -->
   <style>
-    /* 기본 리셋 및 폰트 설정 */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -21,7 +19,6 @@
       background-color: #fdfbf7;
     }
 
-    /* 화면 2분할 메인 레이아웃 */
     .app-container {
       display: flex;
       width: 100vw;
@@ -29,7 +26,6 @@
       overflow: hidden;
     }
 
-    /* 왼쪽 사이드바 */
     .sidebar {
       width: 380px;
       height: 100%;
@@ -41,7 +37,6 @@
       box-shadow: 4px 0 12px rgba(0, 0, 0, 0.03);
     }
 
-    /* 헤더 및 컨트롤 영역 */
     .header-box {
       padding: 20px;
       background-color: #fffaf0;
@@ -57,7 +52,6 @@
       color: #5a4033;
     }
 
-    /* 기준 위치 입력 창 */
     .location-input-group {
       display: flex;
       gap: 6px;
@@ -95,7 +89,6 @@
       background-color: #ffa31a;
     }
 
-    /* 탭 버튼 그룹 */
     .tab-group {
       display: flex;
       gap: 8px;
@@ -130,7 +123,6 @@
       box-shadow: 0 3px 8px rgba(255, 163, 26, 0.25);
     }
 
-    /* 결과 리스트 영역 */
     .results-list {
       flex: 1;
       overflow-y: auto;
@@ -182,7 +174,6 @@
       line-height: 1.5;
     }
 
-    /* 지도 영역 */
     .map-container {
       flex: 1;
       height: 100%;
@@ -194,7 +185,6 @@
       height: 100%;
     }
 
-    /* 마커 클릭 시 나타나는 상세 팝업 스타일 */
     .custom-detail-card {
       width: 240px;
       padding: 12px;
@@ -263,11 +253,6 @@
       font-weight: bold;
     }
 
-    .card-link:hover {
-      text-decoration: underline;
-    }
-
-    /* 반응형 레이아웃 */
     @media (max-width: 768px) {
       .app-container {
         flex-direction: column-reverse;
@@ -284,68 +269,59 @@
     }
   </style>
 
-  <!-- 카카오맵 JavaScript API 로드 -->
   <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=7c77540131080fd98fb393c5bf4ca149&autoload=false&libraries=services"></script>
 </head>
 <body>
 
   <div class="app-container">
-    <!-- 왼쪽 사이드바 -->
     <div class="sidebar">
       <div class="header-box">
         <h1 class="service-title">☕ 감성 공간 탐방기</h1>
         
-        <!-- 기준 위치 입력창 -->
         <div class="location-input-group">
           <input type="text" id="centerLocationInput" class="location-input" placeholder="기준 위치 입력 (예: 강남역, 홍대입구)" onkeydown="if(event.key==='Enter') setCenterLocation()">
           <button class="location-btn" onclick="setCenterLocation()">위치 설정</button>
         </div>
 
-        <!-- 탭 버튼 -->
         <div class="tab-group">
           <button id="tabCafe" class="tab-button active" onclick="switchCategory('CE7')">☕ 카페</button>
           <button id="tabProp" class="tab-button" onclick="switchCategory('소품샵')">🧸 소품샵</button>
         </div>
       </div>
       
-      <!-- 장소 목록 -->
       <ul id="placesList" class="results-list">
-        <li class="status-message">기준 위치를 불러오는 중입니다...</li>
+        <li class="status-message">위치를 불러오는 중입니다...</li>
       </ul>
     </div>
 
-    <!-- 오른쪽 지도 -->
     <div class="map-container">
       <div id="map"></div>
     </div>
   </div>
 
-  <!-- JavaScript 스크립트 -->
   <script>
-    // 샘플 대표 이미지 URL (카페 및 소품샵용)
     const SAMPLE_CAFE_IMAGE = 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=400&q=80';
     const SAMPLE_PROP_IMAGE = 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=400&q=80';
 
-    // 전역 변수
     let mapObject = null;
     let placesService = null;
     let infoWindowObject = null;
     let markersArray = [];
     let currentCenterPosition = null;
-    let currentCategory = 'CE7'; // 기본값: 카페
+    let currentCategory = 'CE7';
 
-    // 카카오맵 로드 후 초기화
     kakao.maps.load(function() {
       initMap();
     });
 
     /**
-     * 지도 초기화 함수 (수정됨: 경고창 없이 매끄럽게 실패 처리)
+     * 지도 초기화 함수
+     * - 경고창(alert)을 완전히 제거하여 권한 거부 시에도 사용자 경험이 방해받지 않도록 설정
      */
     function initMap() {
       const container = document.getElementById('map');
       
-      // 초기 기본 중심 위치 (위치 권한 거부 시 표시할 기본 좌표: 서울시청)
+      // 기본 좌표 (서울시청)
       const defaultCenter = new kakao.maps.LatLng(37.566826, 126.9786567);
       
       const options = {
@@ -359,69 +335,53 @@
 
       currentCenterPosition = defaultCenter;
 
-      // 브라우저 Geolocation 위치 서비스 확인
+      // 위치 정보 시도
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           function(position) {
-            // 위치 권한 허용 성공 시
+            // 위치 권한 성공 시
             const lat = position.coords.latitude;
             const lng = position.coords.longitude;
             currentCenterPosition = new kakao.maps.LatLng(lat, lng);
             
             mapObject.setCenter(currentCenterPosition);
             document.getElementById('centerLocationInput').value = '현재 내 위치';
-            
-            // 검색 실행
             searchPlacesByCategory(currentCategory);
           },
           function(error) {
-            // 위치 권한 실패/거부 시 (alert 경고창 없이 기본 위치 적용)
-            console.warn('위치 권한을 받아올 수 없어 기본 위치(서울시청)로 설정을 진행합니다.');
+            // 위치 권한 거부 또는 실패 시 - alert 실행 없이 기본 위치로 설정
             document.getElementById('centerLocationInput').value = '서울시청';
             searchPlacesByCategory(currentCategory);
           },
           {
-            timeout: 5000 // 5초 초과 시 에러 콜백으로 전환
+            timeout: 3000
           }
         );
       } else {
-        // Geolocation을 지원하지 않는 환경
         document.getElementById('centerLocationInput').value = '서울시청';
         searchPlacesByCategory(currentCategory);
       }
     }
 
-    /**
-     * 입력된 위치 키워드로 기준 지도 중심 좌표 설정
-     */
     function setCenterLocation() {
       const inputKeyword = document.getElementById('centerLocationInput').value.trim();
 
       if (!inputKeyword) {
-        alert('기준 위치를 입력해 주세요!');
         return;
       }
 
-      // 입력한 장소 키워드 검색
       placesService.keywordSearch(inputKeyword, function(data, status) {
         if (status === kakao.maps.services.Status.OK) {
           const firstResult = data[0];
           currentCenterPosition = new kakao.maps.LatLng(firstResult.y, firstResult.x);
-          
-          // 지도의 중심 이동
           mapObject.setCenter(currentCenterPosition);
-
-          // 변경된 위치를 기준으로 현재 선택된 탭 검색 재실행
           searchPlacesByCategory(currentCategory);
         } else {
-          alert('해당 위치를 찾을 수 없습니다. 다른 명칭으로 검색해 보세요.');
+          document.getElementById('placesList').innerHTML = '<li class="status-message">해당 위치를 찾을 수 없습니다. 다른 위치를 검색해 보세요!</li>';
         }
       });
     }
 
-    /**
-     * 탭 버튼 변경 처리 함수
-     */
     function switchCategory(category) {
       currentCategory = category;
 
@@ -439,9 +399,6 @@
       searchPlacesByCategory(category);
     }
 
-    /**
-     * 설정된 위치 중심 및 반경 내 장소 검색
-     */
     function searchPlacesByCategory(category) {
       clearMapAndList();
 
@@ -460,23 +417,15 @@
       }
     }
 
-    /**
-     * 장소 검색 결과 콜백
-     */
     function placesSearchCallback(data, status) {
       if (status === kakao.maps.services.Status.OK) {
         displayPlaces(data);
-      } else if (status === kakao.maps.services.Status.ZERO_RESULT) {
-        const listElement = document.getElementById('placesList');
-        listElement.innerHTML = '<li class="status-message">입력한 위치 주변에 검색 결과가 없습니다.</li>';
       } else {
-        alert('검색 중 오류가 발생했습니다.');
+        const listElement = document.getElementById('placesList');
+        listElement.innerHTML = '<li class="status-message">주변에 검색 결과가 없습니다. 위치를 다시 입력해 보세요!</li>';
       }
     }
 
-    /**
-     * 리스트 및 마커 출력 처리
-     */
     function displayPlaces(places) {
       const listElement = document.getElementById('placesList');
       const bounds = new kakao.maps.LatLngBounds();
@@ -488,7 +437,6 @@
       places.forEach(function(place, index) {
         const placePosition = new kakao.maps.LatLng(place.y, place.x);
 
-        // 마커 생성
         const marker = new kakao.maps.Marker({
           position: placePosition,
           map: mapObject
@@ -497,7 +445,6 @@
 
         bounds.extend(placePosition);
 
-        // 리스트 아이템 생성
         const listItem = document.createElement('li');
         listItem.className = 'result-item';
         const addressText = place.road_address_name || place.address_name;
@@ -508,12 +455,10 @@
           ${place.phone ? `<div class="place-phone">📞 ${place.phone}</div>` : ''}
         `;
 
-        // 마커 클릭 시 상세 팝업 오픈
         kakao.maps.event.addListener(marker, 'click', function() {
           showDetailCardPopup(marker, place);
         });
 
-        // 리스트 클릭 시 이동 및 팝업 오픈
         listItem.addEventListener('click', function() {
           mapObject.panTo(placePosition);
           showDetailCardPopup(marker, place);
@@ -525,15 +470,11 @@
       mapObject.setBounds(bounds);
     }
 
-    /**
-     * 상세 카드 팝업 출력 함수 (이미지, 이름, 특징 등 포함)
-     */
     function showDetailCardPopup(marker, place) {
       const addressText = place.road_address_name || place.address_name;
       const categoryName = currentCategory === 'CE7' ? '카페' : '소품샵';
       const sampleImageUrl = currentCategory === 'CE7' ? SAMPLE_CAFE_IMAGE : SAMPLE_PROP_IMAGE;
 
-      // 상세 팝업 HTML 구조
       const popupHtml = `
         <div class="custom-detail-card">
           <div class="card-image-box">
@@ -543,7 +484,7 @@
           <div class="card-title" title="${place.place_name}">${place.place_name}</div>
           <div class="card-address">${addressText}</div>
           <div class="card-footer">
-            <span>${place.phone || '전화번호 미등록'}</span>
+            <span>${place.phone || '전화번호 없음'}</span>
             <a href="${place.place_url}" target="_blank" class="card-link">상세보기 ➔</a>
           </div>
         </div>
@@ -553,9 +494,6 @@
       infoWindowObject.open(mapObject, marker);
     }
 
-    /**
-     * 지도 마커 및 리스트 초기화
-     */
     function clearMapAndList() {
       markersArray.forEach(function(marker) {
         marker.setMap(null);
