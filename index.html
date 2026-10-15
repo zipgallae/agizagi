@@ -310,7 +310,7 @@
       
       <!-- 장소 목록 -->
       <ul id="placesList" class="results-list">
-        <li class="status-message">기준 위치를 입력하거나 선택해 주세요.</li>
+        <li class="status-message">기준 위치를 불러오는 중입니다...</li>
       </ul>
     </div>
 
@@ -322,7 +322,7 @@
 
   <!-- JavaScript 스크립트 -->
   <script>
-    // 기본 더미 대표 이미지 URL (카페 및 소품샵용)
+    // 샘플 대표 이미지 URL (카페 및 소품샵용)
     const SAMPLE_CAFE_IMAGE = 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=400&q=80';
     const SAMPLE_PROP_IMAGE = 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=400&q=80';
 
@@ -340,12 +340,12 @@
     });
 
     /**
-     * 지도 초기화 함수
+     * 지도 초기화 함수 (수정됨: 경고창 없이 매끄럽게 실패 처리)
      */
     function initMap() {
       const container = document.getElementById('map');
       
-      // 초기 중심 위치 (기본값: 서울시청)
+      // 초기 기본 중심 위치 (위치 권한 거부 시 표시할 기본 좌표: 서울시청)
       const defaultCenter = new kakao.maps.LatLng(37.566826, 126.9786567);
       
       const options = {
@@ -359,24 +359,33 @@
 
       currentCenterPosition = defaultCenter;
 
-      // 사용자에게 현재 위치 기반으로 자동 설정할지 확인 (Geolocation)
+      // 브라우저 Geolocation 위치 서비스 확인
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           function(position) {
+            // 위치 권한 허용 성공 시
             const lat = position.coords.latitude;
             const lng = position.coords.longitude;
             currentCenterPosition = new kakao.maps.LatLng(lat, lng);
+            
             mapObject.setCenter(currentCenterPosition);
             document.getElementById('centerLocationInput').value = '현재 내 위치';
+            
+            // 검색 실행
             searchPlacesByCategory(currentCategory);
           },
           function(error) {
-            // 위치 권한 거부 시 기본 주소 기준 탐색
+            // 위치 권한 실패/거부 시 (alert 경고창 없이 기본 위치 적용)
+            console.warn('위치 권한을 받아올 수 없어 기본 위치(서울시청)로 설정을 진행합니다.');
             document.getElementById('centerLocationInput').value = '서울시청';
             searchPlacesByCategory(currentCategory);
+          },
+          {
+            timeout: 5000 // 5초 초과 시 에러 콜백으로 전환
           }
         );
       } else {
+        // Geolocation을 지원하지 않는 환경
         document.getElementById('centerLocationInput').value = '서울시청';
         searchPlacesByCategory(currentCategory);
       }
